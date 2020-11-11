@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="2ec025ac-0f45-4b29-9890-e5a998aae198" name="gxx@192.168.168.17:22 pix2pixHD">
+        <fileTransfer rootFolder="/media/gxx/Data1/luxf/pix2pixHD1111" accessType="SFTP" host="192.168.168.17" port="22" sshConfigId="f715250f-7bb1-4af6-8c5d-2c2421436f98" sshConfig="gxx@192.168.168.17:22 password" />
+      </webServer>
+    </option>
+  </component>
+</project>
