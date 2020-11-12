@@ -11,9 +11,9 @@ class Pix2PixHDModel(BaseModel):
         return 'Pix2PixHDModel'
     
     def init_loss_filter(self, use_gan_feat_loss, use_vgg_loss):
-        flags = (True, use_gan_feat_loss, use_vgg_loss, True, True)
-        def loss_filter(g_gan, g_gan_feat, g_vgg, d_real, d_fake):
-            return [l for (l,f) in zip((g_gan,g_gan_feat,g_vgg,d_real,d_fake),flags) if f]
+        flags = (True, use_gan_feat_loss, use_vgg_loss, True, True, True)
+        def loss_filter(g_gan, g_gan_feat, g_vgg, d_real, d_fake, g_smooth):
+            return [l for (l,f) in zip((g_gan,g_gan_feat,g_vgg,d_real,d_fake,g_smooth),flags) if f]
         return loss_filter
     
     def initialize(self, opt):
@@ -78,7 +78,7 @@ class Pix2PixHDModel(BaseModel):
                 
         
             # Names so we can breakout loss
-            self.loss_names = self.loss_filter('G_GAN','G_GAN_Feat','G_VGG','D_real', 'D_fake')
+            self.loss_names = self.loss_filter('G_GAN', 'G_GAN_Feat', 'G_VGG', 'D_real', 'D_fake', 'G_smooth')
 
             # initialize optimizers
             # optimizer G
@@ -108,7 +108,7 @@ class Pix2PixHDModel(BaseModel):
             params = list(self.netD.parameters())    
             self.optimizer_D = torch.optim.Adam(params, lr=opt.lr, betas=(opt.beta1, 0.999))
 
-    def encode_input(self, label_map, inst_map=None, real_image=None, feat_map=None, infer=False):             
+    def encode_input(self, label_map, smooth=None, real_image=None, infer=False):
         if self.opt.label_nc == 0:
             input_label = label_map.data.cuda()
         else:
@@ -121,25 +121,28 @@ class Pix2PixHDModel(BaseModel):
                 input_label = input_label.half()
 
         # get edges from instance map
-        if not self.opt.no_instance:
-            inst_map = inst_map.data.cuda()
-            edge_map = self.get_edges(inst_map)
-            input_label = torch.cat((input_label, edge_map), dim=1)         
-        input_label = Variable(input_label, volatile=infer)
+        # if not self.opt.no_instance:
+        #     inst_map = inst_map.data.cuda()
+        #     edge_map = self.get_edges(inst_map)
+        #     input_label = torch.cat((input_label, edge_map), dim=1)
+        # input_label = Variable(input_label, volatile=infer)
 
         # real images for training
         if real_image is not None:
             real_image = Variable(real_image.data.cuda())
 
-        # instance map for feature encoding
-        if self.use_features:
-            # get precomputed feature maps
-            if self.opt.load_features:
-                feat_map = Variable(feat_map.data.cuda())
-            if self.opt.label_feat:
-                inst_map = label_map.cuda()
+        if smooth is not None:
+            smooth = Variable(smooth.data.cuda())
 
-        return input_label, inst_map, real_image, feat_map
+        # instance map for feature encoding
+        # if self.use_features:
+        #     # get precomputed feature maps
+        #     if self.opt.load_features:
+        #         feat_map = Variable(feat_map.data.cuda())
+        #     if self.opt.label_feat:
+        #         inst_map = label_map.cuda()
+
+        return input_label, smooth, real_image
 
     def discriminate(self, input_label, test_image, use_pool=False):
         input_concat = torch.cat((input_label, test_image.detach()), dim=1)
@@ -149,17 +152,18 @@ class Pix2PixHDModel(BaseModel):
         else:
             return self.netD.forward(input_concat)
 
-    def forward(self, label, inst, image, feat, infer=False):
+    def forward(self, label, smooth, image, infer=False):
         # Encode Inputs
-        input_label, inst_map, real_image, feat_map = self.encode_input(label, inst, image, feat)  
+        input_label, smooth_img, real_image = self.encode_input(label, smooth, image)
 
         # Fake Generation
-        if self.use_features:
-            if not self.opt.load_features:
-                feat_map = self.netE.forward(real_image, inst_map)                     
-            input_concat = torch.cat((input_label, feat_map), dim=1)                        
-        else:
-            input_concat = input_label
+        # if self.use_features:
+        #     if not self.opt.load_features:
+        #         feat_map = self.netE.forward(real_image, inst_map)
+        #     input_concat = torch.cat((input_label, feat_map), dim=1)
+        # else:
+        #     input_concat = input_label
+        input_concat = input_label
         fake_image = self.netG.forward(input_concat)
 
         # Fake Detection and Loss
@@ -172,7 +176,11 @@ class Pix2PixHDModel(BaseModel):
 
         # GAN loss (Fake Passability Loss)        
         pred_fake = self.netD.forward(torch.cat((input_label, fake_image), dim=1))        
-        loss_G_GAN = self.criterionGAN(pred_fake, True)               
+        loss_G_GAN = self.criterionGAN(pred_fake, True)
+
+        # 参考CartoonGan生成的模块
+        pred_fake_smooth = self.netD.forward(torch.cat((smooth_img, fake_image), dim=1))
+        loss_G_smooth = self.criterionGAN(pred_fake_smooth, True)
         
         # GAN feature matching loss
         # The feature loss calculation method is to calculate the L1 distance between the features of the false sample and the true sample at the same posotion
@@ -192,7 +200,7 @@ class Pix2PixHDModel(BaseModel):
         
         # Only return the fake_B image if necessary to save BW
         # Return the loss value and the fake picture,because the train function assigns the value infer=save_fake
-        return [self.loss_filter(loss_G_GAN, loss_G_GAN_Feat, loss_G_VGG, loss_D_real, loss_D_fake), None if not infer else fake_image]
+        return [self.loss_filter(loss_G_GAN, loss_G_GAN_Feat, loss_G_VGG, loss_D_real, loss_D_fake, loss_G_smooth), None if not infer else fake_image]
 
     def inference(self, label, inst, image=None):
         # Encode Inputs        

@@ -19,16 +19,20 @@ class AlignedDataset(BaseDataset):
             self.dir_B = os.path.join(opt.dataroot, opt.phase + dir_B)  
             self.B_paths = sorted(make_dataset(self.dir_B))
 
+        ### smooth images
+        dir_C = 'smooth'
+        self.dir_C = os.path.join(opt.dataroot, dir_C)
+        self.C_paths = sorted(make_dataset(self.dir_C))
         ### instance maps
-        if not opt.no_instance:
-            self.dir_inst = os.path.join(opt.dataroot, opt.phase + '_inst')
-            self.inst_paths = sorted(make_dataset(self.dir_inst))
+        # if not opt.no_instance:
+        #     self.dir_inst = os.path.join(opt.dataroot, opt.phase + '_inst')
+        #     self.inst_paths = sorted(make_dataset(self.dir_inst))
 
         ### load precomputed instance-wise encoded features
-        if opt.load_features:                              
-            self.dir_feat = os.path.join(opt.dataroot, opt.phase + '_feat')
-            print('----------- loading features from %s ----------' % self.dir_feat)
-            self.feat_paths = sorted(make_dataset(self.dir_feat))
+        # if opt.load_features:
+        #     self.dir_feat = os.path.join(opt.dataroot, opt.phase + '_feat')
+        #     print('----------- loading features from %s ----------' % self.dir_feat)
+        #     self.feat_paths = sorted(make_dataset(self.dir_feat))
 
         self.dataset_size = len(self.A_paths) 
       
@@ -52,20 +56,29 @@ class AlignedDataset(BaseDataset):
             transform_B = get_transform(self.opt, params)      
             B_tensor = transform_B(B)
 
+        ### input C (smooth images)
+        C_path = self.C_paths[index]
+        C = Image.open(C_path).convert('RGB')
+        transform_C = get_transform(self.opt, params)
+        C_tensor = transform_C(C)
+
+
+
+
+
         ### if using instance maps        
-        if not self.opt.no_instance:
-            inst_path = self.inst_paths[index]
-            inst = Image.open(inst_path)
-            inst_tensor = transform_A(inst)
+        # if not self.opt.no_instance:
+        #     inst_path = self.inst_paths[index]
+        #     inst = Image.open(inst_path)
+        #     inst_tensor = transform_A(inst)
 
-            if self.opt.load_features:
-                feat_path = self.feat_paths[index]            
-                feat = Image.open(feat_path).convert('RGB')
-                norm = normalize()
-                feat_tensor = norm(transform_A(feat))                            
+            # if self.opt.load_features:
+            #     feat_path = self.feat_paths[index]
+            #     feat = Image.open(feat_path).convert('RGB')
+            #     norm = normalize()
+            #     feat_tensor = norm(transform_A(feat))
 
-        input_dict = {'label': A_tensor, 'inst': inst_tensor, 'image': B_tensor, 
-                      'feat': feat_tensor, 'path': A_path}
+        input_dict = {'label': A_tensor, 'smooth': C_tensor, 'image': B_tensor}
 
         return input_dict
 
