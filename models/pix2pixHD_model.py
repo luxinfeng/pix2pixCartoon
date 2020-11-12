@@ -175,6 +175,7 @@ class Pix2PixHDModel(BaseModel):
         loss_G_GAN = self.criterionGAN(pred_fake, True)               
         
         # GAN feature matching loss
+        # The feature loss calculation method is to calculate the L1 distance between the features of the false sample and the true sample at the same posotion
         loss_G_GAN_Feat = 0
         if not self.opt.no_ganFeat_loss:
             feat_weights = 4.0 / (self.opt.n_layers_D + 1)
@@ -190,7 +191,8 @@ class Pix2PixHDModel(BaseModel):
             loss_G_VGG = self.criterionVGG(fake_image, real_image) * self.opt.lambda_feat
         
         # Only return the fake_B image if necessary to save BW
-        return [ self.loss_filter( loss_G_GAN, loss_G_GAN_Feat, loss_G_VGG, loss_D_real, loss_D_fake ), None if not infer else fake_image ]
+        # Return the loss value and the fake picture,because the train function assigns the value infer=save_fake
+        return [self.loss_filter(loss_G_GAN, loss_G_GAN_Feat, loss_G_VGG, loss_D_real, loss_D_fake), None if not infer else fake_image]
 
     def inference(self, label, inst, image=None):
         # Encode Inputs        
