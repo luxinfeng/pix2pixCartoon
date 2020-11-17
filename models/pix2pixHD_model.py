@@ -205,16 +205,16 @@ class Pix2PixHDModel(BaseModel):
     def inference(self, label, inst, image=None):
         # Encode Inputs        
         image = Variable(image) if image is not None else None
-        input_label, inst_map, real_image, _ = self.encode_input(Variable(label), Variable(inst), image, infer=True)
+        input_label, smooth_map, real_image, = self.encode_input(Variable(label), Variable(inst), image, infer=True)
 
         # Fake Generation
         if self.use_features:
             if self.opt.use_encoded_image:
                 # encode the real image to get feature map
-                feat_map = self.netE.forward(real_image, inst_map)
+                feat_map = self.netE.forward(real_image, smooth_map)
             else:
                 # sample clusters from precomputed features             
-                feat_map = self.sample_features(inst_map)
+                feat_map = self.sample_features(smooth_map)
             input_concat = torch.cat((input_label, feat_map), dim=1)                        
         else:
             input_concat = input_label        

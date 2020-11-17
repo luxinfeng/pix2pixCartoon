@@ -2,9 +2,9 @@ import os
 import glob
 import cv2
 
-PATH = "./masular/train_A/"
+PATH = "./masular/train_B/"
 
-paths = glob.glob(os.path.join(PATH, "*.png"))
+paths = glob.glob(os.path.join(PATH, "*.jpg"))
 
 for path in paths:
     img = cv2.imread(path);

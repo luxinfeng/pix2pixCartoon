@@ -78,7 +78,7 @@ class AlignedDataset(BaseDataset):
             #     norm = normalize()
             #     feat_tensor = norm(transform_A(feat))
 
-        input_dict = {'label': A_tensor, 'smooth': C_tensor, 'image': B_tensor}
+        input_dict = {'label': A_tensor, 'smooth': C_tensor, 'image': B_tensor,'path':A_path}
 
         return input_dict
 
