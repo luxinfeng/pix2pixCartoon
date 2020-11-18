@@ -22,7 +22,7 @@ class BaseOptions():
         self.parser.add_argument('--local_rank', type=int, default=0, help='local rank for distributed training')
 
         # input/output sizes       
-        self.parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
+        self.parser.add_argument('--batchSize', type=int, default=2, help='input batch size')
         self.parser.add_argument('--loadSize', type=int, default=512, help='scale images to this size')
         self.parser.add_argument('--fineSize', type=int, default=512, help='then crop to this size')
         self.parser.add_argument('--label_nc', type=int, default=0, help='# of input label channels')
@@ -43,7 +43,7 @@ class BaseOptions():
 
         # for generator
         self.parser.add_argument('--netG', type=str, default='global', help='selects model to use for netG')
-        self.parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
+        self.parser.add_argument('--ngf', type=int, default=32, help='# of gen filters in first conv layer')
         self.parser.add_argument('--n_downsample_global', type=int, default=4, help='number of downsampling layers in netG') 
         self.parser.add_argument('--n_blocks_global', type=int, default=9, help='number of residual blocks in the global generator network')
         self.parser.add_argument('--n_blocks_local', type=int, default=3, help='number of residual blocks in the local enhancer network')

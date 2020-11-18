@@ -2,7 +2,7 @@ import os
 import glob
 import cv2
 
-PATH = "./masular/train_B/"
+PATH = "./masular/test_B/"
 
 paths = glob.glob(os.path.join(PATH, "*.jpg"))
 

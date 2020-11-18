@@ -202,10 +202,10 @@ class Pix2PixHDModel(BaseModel):
         # Return the loss value and the fake picture,because the train function assigns the value infer=save_fake
         return [self.loss_filter(loss_G_GAN, loss_G_GAN_Feat, loss_G_VGG, loss_D_real, loss_D_fake, loss_G_smooth), None if not infer else fake_image]
 
-    def inference(self, label, inst, image=None):
+    def inference(self, label, smooth, image=None):
         # Encode Inputs        
         image = Variable(image) if image is not None else None
-        input_label, smooth_map, real_image, = self.encode_input(Variable(label), Variable(inst), image, infer=True)
+        input_label, smooth_map, real_image, = self.encode_input(Variable(label), Variable(smooth), image, infer=True)
 
         # Fake Generation
         if self.use_features:
